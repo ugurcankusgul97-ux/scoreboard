@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Istadental Satış Yarışması 🏆</title>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --card-glass: rgba(255, 255, 255, 0.03);
+            --gold: #FFD700;
+            --silver: #E0E0E0;
+            --bronze: #CD7F32;
+            --danger-red: #ff0000;
+            --neon-green: #00ff88;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(circle at center top, #1a1a2e 0%, #000000 80%);
+            font-family: 'Roboto', sans-serif;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 50px;
+            overflow-x: hidden;
+        }
+
+        /* --- Header --- */
+        .header-section {
+            text-align: center;
+            margin: 30px 0 50px 0;
+        }
+
+        .grand-prize {
+            font-family: 'Teko', sans-serif;
+            font-size: 6rem;
+            line-height: 1;
+            font-weight: 700;
+            background: linear-gradient(to bottom, #FFD700, #ffb300);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.4));
+        }
+
+        .company-title {
+            font-size: 2rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .day-status {
+            font-size: 1rem; /* Daha küçük */
+            color: #aaa;
+            margin-top: 5px;
+            font-weight: 400;
+            background: rgba(255,255,255,0.08);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        /* --- Main Layout --- */
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+        }
+
+        /* --- TOP 3 PODIUM --- */
+        .podium-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 25px;
+            height: 420px;
+        }
+
+        .podium-card {
+            background: linear-gradient(180deg, rgba(30, 30, 40, 0.9) 0%, rgba(10, 10, 20, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px;
+            position: relative;
+            transition: transform 0.4s ease-out;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+
+        .podium-card:hover { transform: translateY(-10px) scale(1.02); }
+
+        .rank-1 { height: 100%; border-bottom: 8px solid var(--gold); order: 2; z-index: 10; }
+        .rank-2 { height: 85%; border-bottom: 8px solid var(--silver); order: 1; }
+        .rank-3 { height: 75%; border-bottom: 8px solid var(--bronze); order: 3; }
+
+        .p-avatar {
+            width: 100px; height: 100px; border-radius: 50%; background: #151515;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 3rem; font-weight: 700; color: #fff; margin-bottom: 20px;
+            border: 3px solid rgba(255,255,255,0.1);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .rank-1 .p-avatar { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 25px rgba(255,215,0,0.3); }
+        .rank-2 .p-avatar { border-color: var(--silver); color: var(--silver); }
+        .rank-3 .p-avatar { border-color: var(--bronze); color: var(--bronze); }
+
+        .p-name { font-size: 1.6rem; font-weight: 500; margin-bottom: 5px; color: #fff; }
+        .p-score { font-family: 'Teko', sans-serif; font-size: 5rem; font-weight: 700; line-height: 1; margin-top: auto; }
+        .rank-1 .p-score { color: var(--gold); }
+        .rank-2 .p-score { color: var(--silver); }
+        .rank-3 .p-score { color: var(--bronze); }
+
+        /* --- ÖZEL EFEKTLER (Crown & Pursuit) --- */
+        .crown {
+            position: absolute; top: -65px; font-size: 4.5rem;
+            /* YENİ: Büyüyüp küçülme animasyonu */
+            animation: crown-pulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes crown-pulse {
+            from { transform: scale(1); filter: drop-shadow(0 0 15px gold); }
+            to { transform: scale(1.15); filter: drop-shadow(0 0 35px gold); }
+        }
+
+        .pursuit-indicator {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: linear-gradient(45deg, #C0C0C0, #E0E0E0);
+            color: #000;
+            font-size: 0.8rem; font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 20px;
+            box-shadow: 0 0 15px rgba(192, 192, 192, 0.4);
+            /* YENİ: Takip animasyonu */
+            animation: pursuit-bounce 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes pursuit-bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(192, 192, 192, 0.7); }
+        }
+
+        /* --- THE LIST (GRID) --- */
+        .list-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .agent-card {
+            background: var(--card-glass);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-left: 4px solid var(--neon-green);
+            border-radius: 12px;
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .agent-card:hover { background: rgba(255,255,255,0.08); transform: translateX(5px); }
+
+        .agent-info h3 { font-size: 1.3rem; font-weight: 500; color: #fff; }
+        .agent-info span { font-size: 0.9rem; color: #666; font-weight: 700; }
+        .agent-score { font-family: 'Teko', sans-serif; font-size: 3rem; color: var(--neon-green); font-weight: 700; }
+
+        /* --- DANGER ZONE (Nabız Efekti) --- */
+        .danger-mode {
+            border-left-color: var(--danger-red);
+            background: rgba(30, 0, 0, 0.3);
+            animation: danger-pulse 3s infinite ease-in-out;
+        }
+        .danger-mode .agent-score { color: var(--danger-red); opacity: 0.8; }
+        .danger-mode .agent-info h3 { color: #c23b3b; }
+
+        @keyframes danger-pulse {
+            0%, 100% { box-shadow: inset 0 0 0 rgba(255, 0, 0, 0); border-color: rgba(255, 0, 0, 0.2); opacity: 0.7; }
+            50% { box-shadow: inset 0 0 30px rgba(255, 0, 0, 0.15); border-color: rgba(255, 0, 0, 0.6); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 850px) {
+            .podium-wrap { flex-direction: column; height: auto; align-items: center; gap: 30px; }
+            .podium-card { width: 100%; order: initial !important; height: auto; flex-direction: row; justify-content: space-between; padding: 20px; }
+            .p-avatar { width: 70px; height: 70px; font-size: 2rem; margin-bottom: 0; margin-right: 20px; }
+            .p-score { margin-top: 0; font-size: 4rem; }
+            .crown { position: relative; top: auto; font-size: 2.5rem; margin-right: 10px; }
+            .pursuit-indicator { position: relative; top: auto; right: auto; margin-left: 10px; font-size: 0.7rem; padding: 3px 8px;}
+            .rank-1, .rank-2, .rank-3 { border-bottom: none; border-right: 6px solid; }
+            .rank-1 { border-color: var(--gold); } .rank-2 { border-color: var(--silver); } .rank-3 { border-color: var(--bronze); }
+            .grand-prize { font-size: 4rem; }
+            .company-title { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-section">
+        <div class="grand-prize">1.000 €</div>
+        <div class="company-title">Istadental Satış Yarışması</div>
+        <div class="day-status" id="dayStatus">5.Gün Güncel Sonuçlar</div>
+    </div>
+
+    <div class="container">
+        <div class="podium-wrap" id="podium"></div>
+
+        <div class="list-grid" id="grid"></div>
+    </div>
+
+    <script>
+        /***********************************************
+         * AYARLAR: Buraya Google Sheets ID ve gid koy
+         * - SPREADSHEET_ID: Google Sheets URL'deki uzun ID
+         * - GID: sayfanın gid değeri (genellikle 0 veya  gid numarası)
+         *
+         * Örnek sheet URL:
+         * https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit#gid=0
+         ***********************************************/
+        const SPREADSHEET_ID = 1hXyM4SdSDD5w7LqlziIO80xdHK_OkHklFuXrBbhYDuU; // <-- burayı değiştir
+        const GID = "0"; // genelde 0 olur, gerekirse değiştirebilirsin
+
+        // gviz JSON endpoint (public veya "Anyone with link can view" olmalı)
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
+        const podiumEl = document.getElementById('podium');
+        const gridEl = document.getElementById('grid');
+        const dayStatusEl = document.getElementById('dayStatus');
+
+        // Sayı Arttırma (Counter)
+        function animateCounter(element, startVal, target) {
+            startVal = Number(startVal) || 0;
+            if (target === 0) { element.innerText = 0; return; }
+            let current = startVal;
+            const duration = 800;
+            const startTime = performance.now();
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 4);
+                const value = Math.floor(startVal + easeOut * (target - startVal));
+                element.innerText = value;
+                if (progress < 1) requestAnimationFrame(update);
+                else element.innerText = target;
+            }
+            requestAnimationFrame(update);
+        }
+
+        // JSON (gviz) -> agents array dönüşümü
+        function parseGviz(responseText) {
+            // Google'ın döndürdüğü wrapper'ı temizle
+            const jsonText = responseText.replace(/^[^\(]*\(/, '').replace(/\);?$/, '');
+            const data = JSON.parse(jsonText);
+            const table = data.table;
+            const cols = table.cols.map(c => (c && c.label) ? c.label.toLowerCase().trim() : "");
+            const rows = table.rows.map(r => {
+                const obj = {};
+                r.c.forEach((cell, idx) => {
+                    const key = cols[idx] || `col${idx}`;
+                    obj[key] = cell ? cell.v : null;
+                });
+                return obj;
+            });
+            // normalize: beklediğimiz alanlar: name, score
+            const agents = rows.map(r => {
+                // bazı kullanıcılar sütun adlarını "Name", "name", "İsim" vs koyabilir
+                const name = r.name ?? r.isim ?? r.ad ?? r.col0 ?? "";
+                const score = Number(r.score ?? r.puan ?? r.col1 ?? 0) || 0;
+                return { name: String(name).trim(), score: score };
+            }).filter(a=>a.name); // isimsizleri çıkar
+            return agents;
+        }
+
+        // Board render (tam render: temizle + render)
+        function renderBoard(agents) {
+            // Sıralama (score desc, name asc)
+            agents.sort((a, b) => {
+                if (b.score === a.score) return a.name.localeCompare(b.name, 'tr');
+                return b.score - a.score;
+            });
+
+            // Temizle
+            podiumEl.innerHTML = "";
+            gridEl.innerHTML = "";
+
+            const top3 = agents.slice(0, 3);
+            const rest = agents.slice(3);
+
+            top3.forEach((agent, i) => {
+                const rank = i + 1;
+                const initial = agent.name.charAt(0).toUpperCase() || "?";
+
+                const crown = rank === 1 ? '<div class="crown">👑</div>' : '';
+                const pursuit = rank === 2 ? '<div class="pursuit-indicator">🔥TAKİPTE!</div>' : '';
+
+                const card = document.createElement('div');
+                card.className = `podium-card rank-${rank}`;
+                card.innerHTML = `
+                    ${crown}
+                    ${pursuit}
+                    <div class="p-avatar">${initial}</div>
+                    <div class="p-name">${agent.name}</div>
+                    <div class="p-score" id="p-score-${i}">0</div>
+                `;
+                podiumEl.appendChild(card);
+                // animate
+                setTimeout(() => {
+                    animateCounter(document.getElementById(`p-score-${i}`), 0, agent.score);
+                }, 150 + (i * 150));
+            });
+
+            rest.forEach((agent, i) => {
+                const realRank = i + 4;
+                const isDanger = agent.score === 0;
+                const dangerClass = isDanger ? 'danger-mode' : '';
+
+                const card = document.createElement('div');
+                card.className = `agent-card ${dangerClass}`;
+                card.innerHTML = `
+                    <div class="agent-info">
+                        <h3>${agent.name}</h3>
+                        <span>#${realRank}</span>
+                    </div>
+                    <div class="agent-score" id="g-score-${i}">0</div>
+                `;
+                gridEl.appendChild(card);
+
+                setTimeout(() => {
+                    animateCounter(document.getElementById(`g-score-${i}`), 0, agent.score);
+                }, 400 + (i * 80));
+            });
+
+            // Konfeti (sadece ilk render için göstermek istersen, burada bir flag ekleyebilirsin)
+            setTimeout(() => {
+                var end = Date.now() + (1.5 * 1000);
+                var colors = ['#FFD700', '#ffffff', '#C0C0C0'];
+                (function frame() {
+                    confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: colors });
+                    confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: colors });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+            }, 600);
+        }
+
+        // Fetch Sheet ve render
+        let firstLoad = true;
+        async function fetchAndRender() {
+            try {
+                const res = await fetch(SHEET_URL);
+                if (!res.ok) throw new Error('Sheet yüklenemedi: ' + res.status);
+                const txt = await res.text();
+                const agents = parseGviz(txt);
+
+                // güncel gün numarası otomatik hesaplayıp header'a yaz (opsiyonel)
+                // burada örnek gün sayısını agent verisine bağlı değil, elle yöneteceksin
+                // dayStatusEl.innerText = "5.Gün Güncel Sonuçlar";
+
+                renderBoard(agents);
+                firstLoad = false;
+            } catch (err) {
+                console.error(err);
+                // hata durumunda kullanıcıya göster (isteğe bağlı)
+                podiumEl.innerHTML = `<div style="color:#f55; padding:20px;">Veri yüklenemedi. Sheet ID ve paylaşım ayarlarını kontrol et.</div>`;
+                gridEl.innerHTML = "";
+            }
+        }
+
+        // İlk yükleme
+        fetchAndRender();
+
+        // Otomatik yenileme (10 saniyede bir). İstersen 15s-30s yap.
+        setInterval(fetchAndRender, 10000);
+    </script>
+</body>
+</html>
