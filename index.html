@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Istadental Satış Yarışması 🏆</title>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --card-glass: rgba(255, 255, 255, 0.03);
+            --gold: #FFD700;
+            --silver: #E0E0E0;
+            --bronze: #CD7F32;
+            --danger-red: #ff0000;
+            --neon-green: #00ff88;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(circle at center top, #1a1a2e 0%, #000000 80%);
+            font-family: 'Roboto', sans-serif;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 50px;
+            overflow-x: hidden;
+        }
+        .header-section { text-align: center; margin: 30px 0 50px 0; }
+        .grand-prize {
+            font-family: 'Teko', sans-serif;
+            font-size: 6rem;
+            font-weight: 700;
+            background: linear-gradient(to bottom, #FFD700, #ffb300);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .company-title { font-size: 2rem; font-weight: 700; margin-top: 10px; }
+        .day-status {
+            margin-top: 5px;
+            background: rgba(255,255,255,0.08);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 1rem;
+            color: #aaa;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+        }
+        .podium-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 25px;
+            height: 420px;
+        }
+        .podium-card {
+            background: linear-gradient(180deg, rgba(30, 30, 40, 0.9) 0%, rgba(10, 10, 20, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px;
+            position: relative;
+            transition: transform .4s ease-out;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+        .podium-card:hover { transform: translateY(-10px) scale(1.02); }
+        .rank-1 { height: 100%; border-bottom: 8px solid var(--gold); order: 2; }
+        .rank-2 { height: 85%; border-bottom: 8px solid var(--silver); order: 1; }
+        .rank-3 { height: 75%; border-bottom: 8px solid var(--bronze); order: 3; }
+        .p-avatar {
+            width: 100px; height: 100px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 3rem; font-weight: 700; color: #fff;
+            border: 3px solid rgba(255,255,255,0.1);
+        }
+        .rank-1 .p-avatar { border-color: var(--gold); color: var(--gold); }
+        .rank-2 .p-avatar { border-color: var(--silver); color: var(--silver); }
+        .rank-3 .p-avatar { border-color: var(--bronze); color: var(--bronze); }
+        .p-name { font-size: 1.6rem; margin-bottom: 5px; }
+        .p-score { font-family: 'Teko', sans-serif; font-size: 5rem; }
+        .crown { position: absolute; top: -65px; font-size: 4.5rem; }
+        .pursuit-indicator {
+            position: absolute; top: 15px; right: 15px;
+            background: #ddd; padding: 5px 12px; border-radius: 20px;
+            font-size: .8rem; font-weight: 800; color: #000;
+        }
+        .list-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .agent-card {
+            background: var(--card-glass);
+            border-left: 4px solid var(--neon-green);
+            padding: 20px 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .agent-score {
+            font-family: 'Teko', sans-serif;
+            font-size: 3rem;
+            color: var(--neon-green);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-section">
+        <div class="grand-prize">1.000 €</div>
+        <div class="company-title">Istadental Satış Yarışması</div>
+        <div class="day-status" id="dayStatus">5.Gün Güncel Sonuçlar</div>
+    </div>
+
+    <div class="container">
+        <div class="podium-wrap" id="podium"></div>
+        <div class="list-grid" id="grid"></div>
+    </div>
+
+    <script>
+        /**********************
+         GOOGLE SHEETS AYAR
+        **********************/
+        const SPREADSHEET_ID = "1hXyM4SdSDD5w7LqlziIO80xdHK_OkHklFuXrBbhYDuU";  
+        const GID = "0";
+
+        const SHEET_URL =
+            `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
+        const podiumEl = document.getElementById('podium');
+        const gridEl = document.getElementById('grid');
+
+        function animateCounter(el, start, end) {
+            let current = start;
+            const step = () => {
+                current += (end - current) * 0.15;
+                if (Math.abs(end - current) < 1) {
+                    el.textContent = end;
+                } else {
+                    el.textContent = Math.floor(current);
+                    requestAnimationFrame(step);
+                }
+            };
+            step();
+        }
+
+        function parseGviz(text) {
+            const json = JSON.parse(text.replace(/^[^\(]+\(/, '').replace(/\);$/, ''));
+            const table = json.table;
+            const cols = table.cols.map(c => c.label.toLowerCase());
+            return table.rows.map(r => {
+                const obj = {};
+                r.c.forEach((c, i) => obj[cols[i]] = c ? c.v : null);
+                return {
+                    name: obj.name ?? obj.isim ?? "",
+                    score: Number(obj.score ?? obj.puan ?? 0)
+                };
+            }).filter(x => x.name);
+        }
+
+        function render(agents) {
+            agents.sort((a,b)=>b.score - a.score);
+
+            podiumEl.innerHTML="";
+            gridEl.innerHTML="";
+
+            const top3 = agents.slice(0,3);
+            const rest = agents.slice(3);
+
+            top3.forEach((a,i)=>{
+                const el = document.createElement("div");
+                el.className = `podium-card rank-${i+1}`;
+                el.innerHTML = `
+                  ${i===0?'<div class="crown">👑</div>':''}
+                  ${i===1?'<div class="pursuit-indicator">🔥 TA KİPTE</div>':''}
+                  <div class="p-avatar">${a.name[0]}</div>
+                  <div class="p-name">${a.name}</div>
+                  <div class="p-score" id="p${i}">0</div>`;
+                podiumEl.appendChild(el);
+                animateCounter(document.getElementById(`p${i}`),0,a.score);
+            });
+
+            rest.forEach((a,i)=>{
+                const el = document.createElement("div");
+                el.className = `agent-card`;
+                el.innerHTML = `
+                  <div>
+                    <h3>${a.name}</h3>
+                    <span>#${i+4}</span>
+                  </div>
+                  <div class="agent-score" id="g${i}">0</div>`;
+                gridEl.appendChild(el);
+                animateCounter(document.getElementById(`g${i}`),0,a.score);
+            });
+        }
+
+        async function load() {
+            try{
+                const res = await fetch(SHEET_URL);
+                const text = await res.text();
+                const agents = parseGviz(text);
+                render(agents);
+            } catch(e){
+                console.error(e);
+            }
+        }
+
+        load();
+        setInterval(load,10000);
+    </script>
+</body>
+</html>
